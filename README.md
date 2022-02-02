@@ -128,6 +128,50 @@ $request->setConnString(MyPigSQL::getSQLConnStringByName('MainDatabase'));
 $request->setCallable(function(array $data) use ($player){
         $player->sendMessage->('Wow, this is very fine! Here is when the relation has been created: ' . $data['reg_date']);
 });
+
+# Here is a real-world example of a fully implemented command using MyPigSQL.
+    /**
+     * @param CommandSender $sender
+     * @param string $commandLabel
+     * @param array $args
+     * @throws SQLRequestException
+     */
+    public function execute(CommandSender $sender, string $commandLabel, array $args): void
+    {
+        if (!$sender->hasPermission(DefaultPermissions::ROOT_OPERATOR)) {
+            $sender->sendMessage(Translation::getMessage('noPermission'));
+            return;
+        }
+        if (!isset($args[1])) {
+            $sender->sendMessage(Translation::getMessage('usageMessage', [
+                'usage' => $this->getUsage()
+            ]));
+            return;
+        }
+        if (!is_numeric($args[1])) {
+            $sender->sendMessage(Translation::getMessage('notNumeric'));
+            return;
+        }
+
+        $player = $this->getCore()->getServer()->getPlayerExact($args[0]);
+        MyPigSQL::addQueryToBatch(SQLRequest::create(
+            'UPDATE players SET shards = shards + ? WHERE username = ?',
+            'ss',
+            [$args[1], $args[0]],
+            MyPigSQL::getSQLConnStringByName('mainDB'),
+            function(?array $data) use ($sender, $player, $args){
+                $name = $args[0];
+                if($player instanceof CorePlayer){
+                    $player->addShards((int)$args[1]);
+                    $name = $player->getName();
+                }
+                $sender->sendMessage(Translation::getMessage('addShardsSuccess', [
+                    'amount' => TF::GREEN . '' . $args[1],
+                    'name' => TF::GOLD . $name
+                ]));
+            }
+        ));
+    }
 ```
 There are quite a few variables you can give to the SQLRequest object. Here's a table of the different variables. 
 
