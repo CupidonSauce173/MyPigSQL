@@ -167,6 +167,12 @@ class MyPigSQL extends PluginBase
         }), 20);
     }
 
+    protected function onDisable(): void
+    {
+        $this->container['runThread'] = false;
+    }
+
+
     /**
      * Get a Utils from the batch by id.
      * @param string $id
