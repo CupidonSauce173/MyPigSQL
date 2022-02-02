@@ -11,7 +11,6 @@ use function microtime;
 
 class DispatchBatchThread extends Thread
 {
-    /** @var string[] $queryContainers */
     private array $queryContainers = []; # Categorized queries.
     private int $executionInterval = 2;
     private Volatile $container;
