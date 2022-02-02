@@ -1,6 +1,6 @@
 <?php
 
-namespace CupidonSauce173\MyPigSQL\SQLRequest;
+namespace CupidonSauce173\MyPigSQL\Utils;
 
 use function uniqid;
 
@@ -22,20 +22,20 @@ class SQLRequest
     }
 
     /**
-     * Will create a new SQLRequest object.
+     * Will create a new Utils object.
      * @param string $query
      * @param string $dataTypes
      * @param array $dataKeys
      * @param SQLConnString $connString
      * @param null|callable $callback
-     * @return static
+     * @return SQLRequest
      * @throws SQLRequestException
      */
     public static function create(string $query, string $dataTypes, array $dataKeys, SQLConnString $connString, null|callable $callback = null): self
     {
         $result = new self();
         if (empty($query)) {
-            throw new SQLRequestException("You cannot set an empty query in a SQLRequest.");
+            throw new SQLRequestException("You cannot set an empty query in a Utils.");
         }
         $result->setQuery($query);
         $result->setDataTypes($dataTypes);
@@ -106,7 +106,7 @@ class SQLRequest
     public function setQuery(string $query): self
     {
         if (empty($query)) {
-            throw new SQLRequestException('You cannot set an empty query in SQLRequest.');
+            throw new SQLRequestException('You cannot set an empty query in Utils.');
         }
         $this->query = $query;
         return $this;

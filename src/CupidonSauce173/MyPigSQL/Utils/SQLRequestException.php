@@ -1,6 +1,6 @@
 <?php
 
-namespace CupidonSauce173\MyPigSQL\SQLRequest;
+namespace CupidonSauce173\MyPigSQL\Utils;
 
 use Exception;
 

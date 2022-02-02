@@ -2,9 +2,9 @@
 
 namespace CupidonSauce173\MyPigSQL;
 
-use CupidonSauce173\MyPigSQL\SQLRequest\SQLConnString;
-use CupidonSauce173\MyPigSQL\SQLRequest\SQLRequest;
-use CupidonSauce173\MyPigSQL\SQLRequest\SQLRequestException;
+use CupidonSauce173\MyPigSQL\Utils\SQLConnString;
+use CupidonSauce173\MyPigSQL\Utils\SQLRequest;
+use CupidonSauce173\MyPigSQL\Utils\SQLRequestException;
 use CupidonSauce173\MyPigSQL\Task\DispatchBatchThread;
 use mysqli;
 use pocketmine\plugin\PluginBase;
@@ -53,7 +53,7 @@ class MyPigSQL extends PluginBase
 
             public function onCompletion(): void
             {
-                if (!$this->getResult()) new SQLRequestException($this->getResult());
+                if (!$this->getResult()) throw new SQLRequestException($this->getResult());
             }
         };
         $asyncTest->connInfo = $connString;
@@ -124,7 +124,7 @@ class MyPigSQL extends PluginBase
     }
 
     /**
-     * To add a new SQLRequest in the SQLRequest batch, it will encode the request and pack it to be dispatched later.
+     * To add a new Utils in the Utils batch, it will encode the request and pack it to be dispatched later.
      * @param SQLRequest $request
      * @throws SQLRequestException
      */
@@ -140,7 +140,7 @@ class MyPigSQL extends PluginBase
     {
         self::$instance = $this;
     }
-    
+
     protected function onEnable(): void
     {
         $this->container = new Volatile();
@@ -190,7 +190,7 @@ class MyPigSQL extends PluginBase
     }
 
     /**
-     * Get a SQLRequest from the batch by id.
+     * Get a Utils from the batch by id.
      * @param string $id
      * @return SQLRequest
      * @throws SQLRequestException
@@ -198,13 +198,13 @@ class MyPigSQL extends PluginBase
     public static function getQueryFromBatch(string $id): SQLRequest
     {
         if (!isset(self::getInstance()->queryBatch[$id])) {
-            throw new SQLRequestException("There is no SQLRequest with the id $id");
+            throw new SQLRequestException("There is no Utils with the id $id");
         }
         return self::getInstance()->queryBatch[$id];
     }
 
     /**
-     * @return static
+     * @return MyPigSQL
      */
     static function getInstance(): self
     {

@@ -108,7 +108,7 @@ The way you make them is exactly the same as how you create SQLConnStrings. You 
 or `$request = new SQLRequest()`. Here are two examples:
 
 ```php
-# This is how to create a new SQLRequest from the SQLRequest::create() function.
+# This is how to create a new Utils from the Utils::create() function.
 $requestTwo = SQLRequest::create(
         'SELECT * FROM PlayerData WHERE xuid = ?',
         's',
@@ -150,7 +150,7 @@ Here is a list of the other functions related to SQLRequests.
 ```php
 MyPigSQL::addQueryToBatch($request); # Will register the request to the batch.
 MyPigSQL::removeQueryFromBatch($id); # Will unset the request from the batch, must be supplied with the request's id.
-MyPigSQL::getQueryFromBatch($id); # Will return the SQLRequest object from the batch, must be supplied with the request's id.
+MyPigSQL::getQueryFromBatch($id); # Will return the Utils object from the batch, must be supplied with the request's id.
 ```
 
 ### Notes

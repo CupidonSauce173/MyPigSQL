@@ -1,6 +1,6 @@
 <?php
 
-namespace CupidonSauce173\MyPigSQL\SQLRequest;
+namespace CupidonSauce173\MyPigSQL\Utils;
 
 use CupidonSauce173\MyPigSQL\MyPigSQL;
 
@@ -13,11 +13,6 @@ class SQLConnString
     private null|string $database = null;
     private int $port = 3306;
 
-    public function __construct()
-    {
-        return $this;
-    }
-
     /**
      * @param string $connName
      * @param string $address
@@ -26,7 +21,7 @@ class SQLConnString
      * @param string $database
      * @param null|int $port
      * @param bool $validate
-     * @return static
+     * @return SQLConnString
      * @generate create-func
      */
     public static function create(string $connName, string $address, string $username, string $password, string $database, null|int $port = null, bool $validate = true): self

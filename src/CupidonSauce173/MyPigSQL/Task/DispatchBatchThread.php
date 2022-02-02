@@ -2,8 +2,8 @@
 
 namespace CupidonSauce173\MyPigSQL\Task;
 
-use CupidonSauce173\MyPigSQL\SQLRequest\SQLRequest;
-use CupidonSauce173\MyPigSQL\SQLRequest\SQLRequestException;
+use CupidonSauce173\MyPigSQL\Utils\SQLRequest;
+use CupidonSauce173\MyPigSQL\Utils\SQLRequestException;
 use mysqli;
 use Thread;
 use Volatile;
@@ -11,7 +11,7 @@ use function microtime;
 
 class DispatchBatchThread extends Thread
 {
-    /** @var SQLRequest[] $queryContainers */
+    /** @var string[] $queryContainers */
     private array $queryContainers = []; # Categorized queries.
     private int $executionInterval = 2;
     private Volatile $container;
