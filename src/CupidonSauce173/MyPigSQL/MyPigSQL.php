@@ -132,6 +132,7 @@ class MyPigSQL extends PluginBase
         $this->container['executedRequests'] = [];
         $this->container['batch'] = [];
         $this->container['callbackResults'] = [];
+        $this->container['folder'] = __DIR__;
 
         # File integrity check
         if (!file_exists($this->getDataFolder() . 'config.yml')) {
@@ -166,7 +167,12 @@ class MyPigSQL extends PluginBase
                 self::removeQueryFromBatch($id);
                 if ($request instanceof SQLRequest) {
                     if ($request->getCallable() == null) return;
-                    call_user_func($request->getCallable(), (array)self::getInstance()->container['callbackResults'][$id]);
+                    if (!isset(self::getInstance()->container['callbackResults'][$id])) {
+                        $data = null;
+                    } else {
+                        $data = (array)self::getInstance()->container['callbackResults'][$id];
+                    }
+                    call_user_func($request->getCallable(), $data);
                     unset(self::getInstance()->container['callbackResults'][$id]);
                 }
             }
