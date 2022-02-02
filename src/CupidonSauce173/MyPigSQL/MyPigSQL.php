@@ -132,6 +132,7 @@ class MyPigSQL extends PluginBase
         $this->container['executedRequests'] = [];
         $this->container['batch'] = [];
         $this->container['callbackResults'] = [];
+        $this->container['folder'] = __DIR__;
 
         # File integrity check
         if (!file_exists($this->getDataFolder() . 'config.yml')) {

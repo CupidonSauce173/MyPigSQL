@@ -28,6 +28,10 @@ class DispatchBatchThread extends Thread
      */
     public function run(): void
     {
+        include($this->container['folder'] . "/Utils/SQLRequest.php");
+        include($this->container['folder'] . "/Utils/SQLConnString.php");
+        include($this->container['folder'] . "/Utils/SQLRequestException.php");
+
         $nextTime = microtime(true) + 1;
         while ($this->container['runThread']) {
             if (microtime(true) >= $nextTime) {
@@ -36,6 +40,7 @@ class DispatchBatchThread extends Thread
                 $connections = [];
                 /** @var SQLRequest $query */
                 foreach ($this->container['batch'] as $query) {
+                    if(!$query instanceof SQLRequest) throw new SQLRequestException('Error while processing a SQLRequest');
                     $connString = $query->getConnString();
                     if (!isset($this->queryContainers[$connString->getName()])) {
                         $this->queryContainers[$connString->getName()] = [];
@@ -64,8 +69,11 @@ class DispatchBatchThread extends Thread
                         if ($stmt->error_list) {
                             throw new SQLRequestException($stmt->error);
                         }
-                        $data = $stmt->get_result()->fetch_assoc();
-                        $this->container['callbackResults'][$query->getId()] = $data;
+                        $results = $stmt->get_result();
+                        if($results !== false) {
+                            $data = $results->fetch_assoc();
+                            $this->container['callbackResults'][$query->getId()] = $data;
+                        }
                         $stmt->close();
                     }
                 }
