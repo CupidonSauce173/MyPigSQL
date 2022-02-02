@@ -4,10 +4,10 @@ namespace CupidonSauce173\MyPigSQL\Task;
 
 use CupidonSauce173\MyPigSQL\SQLRequest\SQLRequest;
 use CupidonSauce173\MyPigSQL\SQLRequest\SQLRequestException;
-
-use Thread;
 use mysqli;
+use Thread;
 use Volatile;
+use function microtime;
 
 class DispatchBatchThread extends Thread
 {
@@ -16,6 +16,9 @@ class DispatchBatchThread extends Thread
     private int $executionInterval = 2;
     private Volatile $container;
 
+    /**
+     * @param Volatile $container
+     */
     public function __construct(Volatile $container)
     {
         $this->container = $container;
@@ -44,9 +47,9 @@ class DispatchBatchThread extends Thread
         /** @var mysqli[] $connections */
         $connections = [];
         /** @var SQLRequest $query */
-        foreach($this->container['batch'] as $query) {
+        foreach ($this->container['batch'] as $query) {
             $connString = $query->getConnString();
-            if(!isset($this->queryContainers[$connString->getName()])){
+            if (!isset($this->queryContainers[$connString->getName()])) {
                 $this->queryContainers[$connString->getName()] = [];
             }
             $conn = new mysqli(
@@ -62,15 +65,15 @@ class DispatchBatchThread extends Thread
             $this->queryContainers[$connString->getName()][$query->getId()] = $query;
         }
         # Process all queries
-        foreach((array)$this->queryContainers as $databaseQueries){
+        foreach ((array)$this->queryContainers as $databaseQueries) {
             /** @var SQLRequest $query */
-            foreach($databaseQueries as $query){
-                if(isset($this->container['executedRequests'][$query->getId()])) return;
+            foreach ($databaseQueries as $query) {
+                if (isset($this->container['executedRequests'][$query->getId()])) return;
                 $this->container['executedRequests'][] = $query->getId();
                 $stmt = $connections[$query->getConnString()->getName()]->prepare($query->getQuery());
                 $stmt->bind_param($query->getDataTypes(), ...$query->getDataKeys());
                 $stmt->execute();
-                if($stmt->error_list){
+                if ($stmt->error_list) {
                     throw new SQLRequestException($stmt->error);
                 }
                 $data = $stmt->get_result()->fetch_assoc();

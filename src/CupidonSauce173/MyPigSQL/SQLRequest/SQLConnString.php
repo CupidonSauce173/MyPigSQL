@@ -32,9 +32,9 @@ class SQLConnString
         $conn->setUsername($username);
         $conn->setPassword($password);
         $conn->setDatabase($database);
-        if($port == null) return $conn;
+        if ($port == null) return $conn;
         $conn->setPort($port);
-        if($validate){
+        if ($validate) {
             MyPigSQL::validateConnString([
                 'address' => $address,
                 'username' => $username,
@@ -46,6 +46,18 @@ class SQLConnString
         return $conn;
     }
 
+    /**
+     * Set the name of the SQLConnString.
+     * @param string $connName
+     */
+    public function setName(string $connName): void
+    {
+        $this->connName = $connName;
+    }
+
+    /**
+     * Will validate the connection info by trying to connect to the database.
+     */
     public function validate(): void
     {
         MyPigSQL::validateConnString([
@@ -57,63 +69,102 @@ class SQLConnString
         ]);
     }
 
-    public function setDatabase(string $database): void
-    {
-        $this->database = $database;
-    }
-
-    public function setName(string $connName): void
-    {
-        $this->connName = $connName;
-    }
-
-    public function setAddress(string $address): void
-    {
-        $this->address = $address;
-    }
-
-    public function setUsername(string $username): void
-    {
-        $this->username = $username;
-    }
-
-    public function setPassword(string $password): void
-    {
-        $this->password = $password;
-    }
-
-    public function setPort(int $port): void
-    {
-        $this->port = $port;
-    }
-
+    /**
+     * Returns the database used for the request.
+     * @return string|null
+     */
     public function getDatabase(): ?string
     {
         return $this->database;
     }
 
+    /**
+     * Set the database used.
+     * @param string $database
+     */
+    public function setDatabase(string $database): void
+    {
+        $this->database = $database;
+    }
+
+    /**
+     * Returns the name of the SQLConnString.
+     * @return string|null
+     */
     public function getName(): ?string
     {
         return $this->connName;
     }
 
+    /**
+     * Returns the host/address server.
+     * @return string|null
+     */
     public function getAddress(): ?string
     {
         return $this->address;
     }
 
+    /**
+     * Set the host/address server.
+     * @param string $address
+     */
+    public function setAddress(string $address): void
+    {
+        $this->address = $address;
+    }
+
+    /**
+     * Returns the username for the connection.
+     * @return string|null
+     */
     public function getUsername(): ?string
     {
         return $this->username;
     }
 
+    /**
+     * Set the username for the connection.
+     * @param string $username
+     */
+    public function setUsername(string $username): void
+    {
+        $this->username = $username;
+    }
+
+    /**
+     * Returns the password for the user.
+     * @return string|null
+     */
     public function getPassword(): ?string
     {
         return $this->password;
     }
 
+    /**
+     * Set the password for the user.
+     * @param string $password
+     */
+    public function setPassword(string $password): void
+    {
+        $this->password = $password;
+    }
+
+    /**
+     * Returns the port used for the connection.
+     * @return int
+     */
     public function getPort(): int
     {
         return $this->port;
+    }
+
+    /**
+     * Set the port of the server, this is optional, the default value is 3306
+     * @param int $port
+     */
+    public function setPort(int $port): void
+    {
+        $this->port = $port;
     }
 }
