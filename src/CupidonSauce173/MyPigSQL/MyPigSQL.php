@@ -2,14 +2,12 @@
 
 namespace CupidonSauce173\MyPigSQL;
 
+use CupidonSauce173\MyPigSQL\Task\DispatchBatchThread;
 use CupidonSauce173\MyPigSQL\Task\ValidationTask;
 use CupidonSauce173\MyPigSQL\Utils\SQLConnString;
 use CupidonSauce173\MyPigSQL\Utils\SQLRequest;
 use CupidonSauce173\MyPigSQL\Utils\SQLRequestException;
-use CupidonSauce173\MyPigSQL\Task\DispatchBatchThread;
-use mysqli;
 use pocketmine\plugin\PluginBase;
-use pocketmine\scheduler\AsyncTask;
 use pocketmine\scheduler\ClosureTask;
 use pocketmine\utils\Config;
 use Volatile;
@@ -35,6 +33,14 @@ class MyPigSQL extends PluginBase
     {
         # Will validate connection by trying to connect async.
         MyPigSQL::getInstance()->getServer()->getAsyncPool()->submitTask(new ValidationTask($connString));
+    }
+
+    /**
+     * @return MyPigSQL
+     */
+    static function getInstance(): self
+    {
+        return self::$instance;
     }
 
     /**
@@ -157,7 +163,7 @@ class MyPigSQL extends PluginBase
                 unset($this->container['executedRequests'][$index]);
                 if (!isset($this->container['callbackResults'][$id])) return;
                 $request = self::getQueryFrombatch($id);
-                self::removeQueryFromBatch($id);;
+                self::removeQueryFromBatch($id);
                 if ($request instanceof SQLRequest) {
                     if ($request->getCallable() == null) return;
                     call_user_func($request->getCallable(), (array)self::getInstance()->container['callbackResults'][$id]);
@@ -166,12 +172,6 @@ class MyPigSQL extends PluginBase
             }
         }), 20);
     }
-
-    protected function onDisable(): void
-    {
-        $this->container['runThread'] = false;
-    }
-
 
     /**
      * Get a Utils from the batch by id.
@@ -188,14 +188,6 @@ class MyPigSQL extends PluginBase
     }
 
     /**
-     * @return MyPigSQL
-     */
-    static function getInstance(): self
-    {
-        return self::$instance;
-    }
-
-    /**
      * To remove a query from the batch.
      * @param string $id
      * @return bool
@@ -208,5 +200,10 @@ class MyPigSQL extends PluginBase
         }
         unset(self::getInstance()->queryBatch[$id]);
         return true;
+    }
+
+    protected function onDisable(): void
+    {
+        $this->container['runThread'] = false;
     }
 }

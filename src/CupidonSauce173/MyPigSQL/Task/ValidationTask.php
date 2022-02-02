@@ -3,8 +3,8 @@
 namespace CupidonSauce173\MyPigSQL\Task;
 
 use CupidonSauce173\MyPigSQL\Utils\SQLRequestException;
-use pocketmine\scheduler\AsyncTask;
 use mysqli;
+use pocketmine\scheduler\AsyncTask;
 
 class ValidationTask extends AsyncTask
 {
