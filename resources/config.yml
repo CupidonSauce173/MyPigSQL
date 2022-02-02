@@ -1,0 +1,4 @@
+# DispatchBatchThread will be executed after x seconds.
+batch-execution-interval: 2
+# will update the batch container in the DispatchBatchThread after x seconds.
+batch-update-interval: 2

@@ -1,0 +1,5 @@
+name: MyPigSQL
+main: CupidonSauce173\MyPigSQL\MyPigSQL
+version: 1.0.0-beta
+api: 4.0.0
+description: MySQL Framework to send batches of queries accross multiple database connections in AsyncTasks.
