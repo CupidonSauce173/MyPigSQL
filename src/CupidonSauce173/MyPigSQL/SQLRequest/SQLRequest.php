@@ -57,10 +57,12 @@ class SQLRequest
     /**
      * Set callable function.
      * @param callable|null $callback
+     * @return SQLRequest
      */
-    public function setCallable(?callable $callback): void
+    public function setCallable(?callable $callback): self
     {
         $this->callable = $callback;
+        return $this;
     }
 
     /**
@@ -98,16 +100,16 @@ class SQLRequest
     /**
      * To set the query of the request. (NEEDED)
      * @param string $query
-     * @return bool
+     * @return SQLRequest
      * @throws SQLRequestException
      */
-    public function setQuery(string $query): bool
+    public function setQuery(string $query): self
     {
         if (empty($query)) {
             throw new SQLRequestException('You cannot set an empty query in SQLRequest.');
         }
         $this->query = $query;
-        return true;
+        return $this;
     }
 
     /**
@@ -122,10 +124,12 @@ class SQLRequest
     /**
      * To set the data types of the query. (OPTIONAL)
      * @param string $dataTypes
+     * @return SQLRequest
      */
-    public function setDataTypes(string $dataTypes): void
+    public function setDataTypes(string $dataTypes): self
     {
         $this->dataTypes = $dataTypes;
+        return $this;
     }
 
     /**
@@ -140,10 +144,12 @@ class SQLRequest
     /**
      * To set the dataKeys of the query. (OPTIONAL)
      * @param array $dataKeys
+     * @return SQLRequest
      */
-    public function setDataKeys(array $dataKeys): void
+    public function setDataKeys(array $dataKeys): self
     {
         $this->dataKeys = $dataKeys;
+        return $this;
     }
 
     /**
@@ -158,9 +164,11 @@ class SQLRequest
     /**
      * To set the database of the query. (NEEDED)
      * @param SQLConnString $connString
+     * @return SQLRequest
      */
-    public function setConnString(SQLConnString $connString): void
+    public function setConnString(SQLConnString $connString): self
     {
         $this->connString = $connString;
+        return $this;
     }
 }

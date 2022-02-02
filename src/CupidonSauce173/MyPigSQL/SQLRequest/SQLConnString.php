@@ -13,6 +13,11 @@ class SQLConnString
     private null|string $database = null;
     private int $port = 3306;
 
+    public function __construct()
+    {
+        return $this;
+    }
+
     /**
      * @param string $connName
      * @param string $address
@@ -49,10 +54,12 @@ class SQLConnString
     /**
      * Set the name of the SQLConnString.
      * @param string $connName
+     * @return SQLConnString
      */
-    public function setName(string $connName): void
+    public function setName(string $connName): self
     {
         $this->connName = $connName;
+        return $this;
     }
 
     /**
@@ -81,10 +88,12 @@ class SQLConnString
     /**
      * Set the database used.
      * @param string $database
+     * @return SQLConnString
      */
-    public function setDatabase(string $database): void
+    public function setDatabase(string $database): self
     {
         $this->database = $database;
+        return $this;
     }
 
     /**
@@ -108,10 +117,12 @@ class SQLConnString
     /**
      * Set the host/address server.
      * @param string $address
+     * @return SQLConnString
      */
-    public function setAddress(string $address): void
+    public function setAddress(string $address): self
     {
         $this->address = $address;
+        return $this;
     }
 
     /**
@@ -126,10 +137,12 @@ class SQLConnString
     /**
      * Set the username for the connection.
      * @param string $username
+     * @return SQLConnString
      */
-    public function setUsername(string $username): void
+    public function setUsername(string $username): self
     {
         $this->username = $username;
+        return $this;
     }
 
     /**
@@ -144,10 +157,12 @@ class SQLConnString
     /**
      * Set the password for the user.
      * @param string $password
+     * @return SQLConnString
      */
-    public function setPassword(string $password): void
+    public function setPassword(string $password): self
     {
         $this->password = $password;
+        return $this;
     }
 
     /**
@@ -162,9 +177,11 @@ class SQLConnString
     /**
      * Set the port of the server, this is optional, the default value is 3306
      * @param int $port
+     * @return SQLConnString
      */
-    public function setPort(int $port): void
+    public function setPort(int $port): self
     {
         $this->port = $port;
+        return $this;
     }
 }

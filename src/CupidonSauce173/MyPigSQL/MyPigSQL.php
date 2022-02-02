@@ -141,6 +141,9 @@ class MyPigSQL extends PluginBase
         self::$instance = $this;
     }
 
+    /**
+     * @throws SQLRequestException
+     */
     protected function onEnable(): void
     {
         $this->container = new Volatile();
