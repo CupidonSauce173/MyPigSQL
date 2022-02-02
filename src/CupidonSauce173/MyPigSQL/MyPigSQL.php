@@ -2,6 +2,7 @@
 
 namespace CupidonSauce173\MyPigSQL;
 
+use CupidonSauce173\MyPigSQL\Task\ValidationTask;
 use CupidonSauce173\MyPigSQL\Utils\SQLConnString;
 use CupidonSauce173\MyPigSQL\Utils\SQLRequest;
 use CupidonSauce173\MyPigSQL\Utils\SQLRequestException;
@@ -33,30 +34,7 @@ class MyPigSQL extends PluginBase
     public static function validateConnString(array $connString)
     {
         # Will validate connection by trying to connect async.
-        $asyncTest = new class() extends AsyncTask {
-            public array $connInfo;
-
-            public function onRun(): void
-            {
-                $conn = new mysqli(
-                    $this->connInfo['address'],
-                    $this->connInfo['username'],
-                    $this->connInfo['password'],
-                    $this->connInfo['database'],
-                    $this->connInfo['port']);
-                if ($conn->connect_error != false) {
-                    $this->setResult($conn->connect_error);
-                } else {
-                    $this->setResult(true);
-                }
-            }
-
-            public function onCompletion(): void
-            {
-                if (!$this->getResult()) throw new SQLRequestException($this->getResult());
-            }
-        };
-        $asyncTest->connInfo = $connString;
+        MyPigSQL::getInstance()->getServer()->getAsyncPool()->submitTask(new ValidationTask($connString));
     }
 
     /**
