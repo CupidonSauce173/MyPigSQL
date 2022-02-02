@@ -6,6 +6,7 @@
 <p align="center"> Async MySQL Framework for PocketMine-MP </p>
 
 ### Known Issues
+- There are some weird behaviors still, **do not use this for production server until further notice. I will be testing it on a network first and fix all possible issues**.
 
 | **Feature**                 | **State** | 
 | --------------------------- |:----------:|
