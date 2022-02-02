@@ -55,12 +55,16 @@ $connString->setDatabase('notifications');
 $connString->setPort(3589); # 3306 is the default port if none is supplied.
 $connString->validate();
 ```
-
 There are quite a few variables you can give to the SQLConnString object. Here's a table of the different variables.
-| **Property** | **DataType** | **Description** | | ------------ | :---------- | :------------- | | $name | string | The
-name of the connection. | | $address | string | The host/address of the server server. | | $username | string | The
-username used to connect. | | $password | string | The password of the user. | | $database | string | The database used.
-| | $port | int | The port of the server.
+
+| **Property** | **DataType** | **Description** | 
+| ------------ | :---------- | :------------- | 
+| $name | string | The name of the connection. | 
+| $address | string | The host/address of the server server. | 
+| $username | string | The username used to connect. | 
+| $password | string | The password of the user. | 
+| $database | string | The database used. | 
+| $port | int | The port of the server. |
 
 #### SQLConnString::validate();
 
@@ -124,13 +128,16 @@ $request->setCallable(function(array $data) use ($player){
         $player->sendMessage->('Wow, this is very fine! Here is when the relation has been created: ' . $data['reg_date']);
 });
 ```
+There are quite a few variables you can give to the SQLRequest object. Here's a table of the different variables. 
 
-There are quite a few variables you can give to the SQLRequest object. Here's a table of the different variables. | **
-Property** | **DataType**   | **Description** | | ------------ | :------------- | :------------- | | $query | string |
-The query string. | | $dataTypes | string | The variable types used in the prepared statement. | | $dataKeys | array |
-The variables used in the prepared statement. | | $connString | SQLConnString | The SQLConnString object used for the
-request. | | $validated | bool | If the request has been sent to the MySQL server. | | $id | string | The id of the
-request. |
+| **Property** | **DataType**   | **Description** | 
+| ------------ | :------------- | :------------- |
+| $query | string | The query string. | 
+| $dataTypes | string | The variable types used in the prepared statement. | 
+| $dataKeys | array |The variables used in the prepared statement. | 
+| $connString | SQLConnString | The SQLConnString object used for the request. | 
+| $validated | bool | If the request has been sent to the MySQL server. | 
+| $id | string | The id of the request. |
 
 To register your query in the next batch of queries to be sent, you need to use this simple line of code:
 
