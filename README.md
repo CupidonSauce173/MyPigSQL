@@ -160,3 +160,7 @@ MyPigSQL::getQueryFromBatch($id); # Will return the Utils object from the batch,
 2. `SQLRequest::setDataKeys($dataList);` might be changed to `SQLRequest::setDataInput($dataList);`.
 3. You can, if you do not want to register a new SQLConnString, create an SQLConnStrig without
    a `$name` (`SQLConnString::setName($name)`) by making it `null` when creating it.
+4. A thread for each SQLConnStrings might be implemented to speed up the executing of the batch.
+
+### Why this?
+I made this plugin in my spare time because I didn't want to use another library for my network and because I am planning to connect all my other systems (PigNotify, PigFriend & more to come) "together". My only problem was the use of threads for each plugins so this library fixes the issue by using one thread for all other systems.
