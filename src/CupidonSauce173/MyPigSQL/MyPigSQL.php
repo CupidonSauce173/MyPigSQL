@@ -127,19 +127,20 @@ class MyPigSQL extends PluginBase
 
     protected function onEnable(): void
     {
-        $this->container = new Volatile();
-        $this->container['runThread'] = true;
-        $this->container['executedRequests'] = [];
-        $this->container['batch'] = [];
-        $this->container['callbackResults'] = [];
-        $this->container['folder'] = __DIR__;
-
         # File integrity check
         if (!file_exists($this->getDataFolder() . 'config.yml')) {
             $this->saveResource('config.yml');
         }
         $config = new Config($this->getDataFolder() . 'config.yml', Config::YAML);
         $config = $config->getAll();
+
+        # Init volatile.
+        $this->container = new Volatile();
+        $this->container['runThread'] = true;
+        $this->container['executedRequests'] = [];
+        $this->container['batch'] = [];
+        $this->container['callbackResults'] = [];
+        $this->container['folder'] = __DIR__;
 
         # Ini DispatchBatchThread and it's options.
         $this->dispatchBatchTask = new DispatchBatchThread($this->container);
@@ -150,11 +151,11 @@ class MyPigSQL extends PluginBase
         $this->getScheduler()->scheduleRepeatingTask(new ClosureTask(function () {
             foreach ($this->queryBatch as $request) {
                 if ($request->hasBeenExecuted()) return;
+                $request->hasBeenExecuted(true);
                 $callback = $request->getCallable();
                 $request->setCallable(null);
-                $this->container['batch'][] = $request;
+                $this->container['batch'][$request->getId()] = $request;
                 $request->setCallable($callback);
-                $request->hasBeenExecuted(true);
             }
         }), 20 * $config['batch-update-interval']);
 
@@ -188,7 +189,7 @@ class MyPigSQL extends PluginBase
     public static function getQueryFromBatch(string $id): SQLRequest
     {
         if (!isset(self::getInstance()->queryBatch[$id])) {
-            throw new SQLRequestException("There is no Utils with the id $id");
+            throw new SQLRequestException("There is no SQLRequest with the id $id");
         }
         return self::getInstance()->queryBatch[$id];
     }
