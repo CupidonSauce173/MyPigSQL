@@ -50,8 +50,12 @@ class DispatchBatchThread extends Thread
         $connections = [];
         /** @var string[] $queryContainers */
         $queryContainers = []; // Categorized queries by SQLConnStrings.
-        /** @var SQLRequest $query */
-        foreach ($this->container['batch'] as $id=>$query) {
+
+        /** @var string $query */
+        foreach ($this->container['batch'] as $id=>$serialized) {
+            /** @var SQLRequest $query */
+            $query = unserialize($serialized);
+            # Verifying objects integrity.
             if (!$query instanceof SQLRequest) throw new SQLRequestException('Error while processing a SQLRequest');
             $connString = $query->getConnString();
             if (!$connString instanceof SQLConnString) throw new SQLRequestException('Error while processing a SQLConnString');

@@ -16,6 +16,8 @@ use function file_exists;
 
 class MyPigSQL extends PluginBase
 {
+    /** @var DispatchBatchThread[] $dispatchBatchThreadPool */
+    private array $dispatchBatchThreadPool = [];
     static MyPigSQL $instance;
     /** @var SQLRequest[] */
     private array $queryBatch = [];
@@ -154,7 +156,7 @@ class MyPigSQL extends PluginBase
                 $request->hasBeenExecuted(true);
                 $callback = $request->getCallable();
                 $request->setCallable(null);
-                $this->container['batch'][$request->getId()] = $request;
+                $this->container['batch'][$request->getId()] = serialize($request);
                 $request->setCallable($callback);
             }
         }), 20 * $config['batch-update-interval']);
