@@ -15,15 +15,25 @@ class DispatchBatchThread extends Thread
     private int $executionInterval = 2;
     private Volatile $container;
 
+    # Since 2.0.0
+    private int $type;
+    private int $batch = 0;
+    const MAIN_THREAD = 0; # Is the main thread that never stops until pmmp stops.
+    const HELP_THREAD = 1; # Only starts when more than 1 request batch.
+
     /**
      * @param Volatile $container
+     * @param int $type
      */
-    public function __construct(Volatile $container)
+    public function __construct(Volatile $container, int $type)
     {
+        $this->type = $type;
         $this->container = $container;
         require_once($this->container['folder'] . "/Utils/SQLRequestException.php");
         require_once($this->container['folder'] . "/Utils/SQLRequest.php");
         require_once($this->container['folder'] . "/Utils/SQLConnString.php");
+
+        var_dump("thread {$this->getThreadId()} started!");
     }
 
     /**
@@ -32,11 +42,25 @@ class DispatchBatchThread extends Thread
     public function run(): void
     {
         $nextTime = microtime(true) + 1;
-        while ($this->container['runThread']) {
-            if (microtime(true) >= $nextTime) {
-                $nextTime = microtime(true) + $this->executionInterval;
-                $this->processThread();
+
+        if($this->type == self::MAIN_THREAD){
+            while ($this->container['runThread'][self::MAIN_THREAD]) {
+                if (microtime(true) >= $nextTime) {
+                    $nextTime = microtime(true) + $this->executionInterval;
+                    $this->processThread();
+                }
             }
+        }else{
+            while ($this->container['runThread'][self::HELP_THREAD][$this->batch]) {
+                if (microtime(true) >= $nextTime) {
+                    $nextTime = microtime(true) + $this->executionInterval;
+                    $this->processThread();
+                }
+            }
+        }
+        var_dump('Killing thread ' . $this->getThreadId() . '...');
+        if(isset($this->container['runThread'][self::HELP_THREAD][$this->batch])){
+            $this->container['runThread'][self::HELP_THREAD][$this->batch] = null;
         }
     }
 
@@ -45,6 +69,7 @@ class DispatchBatchThread extends Thread
      */
     private function processThread(): void
     {
+        var_dump("running thread {$this->getThreadId()} with batch {$this->batch}");
         # Categorize queries into connStrings & creating MySQL connections.
         /** @var mysqli[] $connections */
         $connections = [];
@@ -52,7 +77,7 @@ class DispatchBatchThread extends Thread
         $queryContainers = []; // Categorized queries by SQLConnStrings.
 
         /** @var string $query */
-        foreach ($this->container['batch'] as $id=>$serialized) {
+        foreach ($this->container['batch'][$this->batch] as $id=>$serialized) {
             /** @var SQLRequest $query */
             $query = unserialize($serialized);
             # Verifying objects integrity.
@@ -66,7 +91,7 @@ class DispatchBatchThread extends Thread
             if (isset($queryContainers[$connString->getName()][$query->getId()])) return;
             $queryContainers[$connString->getName()][$query->getId()] = $query;
             # Removing SQLRequest from the batch.
-            unset($this->container['batch'][$id]);
+            unset($this->container['batch'][$this->batch][$id]);
         }
         # Process all queries
         foreach ($queryContainers as $databaseQueries) {
@@ -89,7 +114,11 @@ class DispatchBatchThread extends Thread
                 $this->container['callbackResults'][$query->getId()] = $data;
                 $stmt->close();
                 unset($queryContainers[$query->getConnString()->getName()][$query->getId()]);
+                var_dump("{$query->getId()} has been processed!");
             }
+        }
+        if($this->type != self::MAIN_THREAD){
+            $this->container['runThread'][self::HELP_THREAD][$this->batch] = false;
         }
     }
 
@@ -110,10 +139,20 @@ class DispatchBatchThread extends Thread
     }
 
     /**
+     * Function to set the execution interval.
      * @param int $seconds
      */
     public function setExecutionInterval(int $seconds): void
     {
         $this->executionInterval = $seconds;
+    }
+
+    /**
+     * Function to set the batch that the thread will take care of.
+     * @param int $batch
+     */
+    public function setBatchToExecute(int $batch): void
+    {
+        $this->batch = $batch;
     }
 }

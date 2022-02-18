@@ -10,8 +10,10 @@ class SQLRequest
     private null|string $dataTypes = null;
     private null|array $dataKeys = null;
     private null|SQLConnString $connString = null;
-    private bool $validated = false;
+    private bool $dispatched = false;
+    private bool $completed = false;
     private string $id;
+    private int $batch = 0;
 
     /** @var null|callable $callable */
     private $callable = null;
@@ -28,10 +30,11 @@ class SQLRequest
      * @param array $dataKeys
      * @param SQLConnString $connString
      * @param null|callable $callback
+     * @param int $batch
      * @return SQLRequest
      * @throws SQLRequestException
      */
-    public static function create(string $query, string $dataTypes, array $dataKeys, SQLConnString $connString, null|callable $callback = null): self
+    public static function create(string $query, string $dataTypes, array $dataKeys, SQLConnString $connString, null|callable $callback = null, int $batch = 0): self
     {
         $result = new self();
         if (empty($query)) {
@@ -42,7 +45,26 @@ class SQLRequest
         $result->setDataKeys($dataKeys);
         $result->setConnString($connString);
         $result->setCallable($callback);
+        $result->setBatch();
         return $result;
+    }
+
+    /**
+     * To set in which batch this request will be executed.
+     * @param int $batchNumber
+     */
+    public function setBatch(int $batchNumber = 0): void
+    {
+        $this->batch = $batchNumber;
+    }
+
+    /**
+     * Returns in which batch this request will be executed.
+     * @return int
+     */
+    public function getBatch(): int
+    {
+        return $this->batch;
     }
 
     /**
@@ -66,17 +88,31 @@ class SQLRequest
     }
 
     /**
-     * Returns if the request has been executed or to set if the request has been executed.
+     * Returns if the request has been dispatched to the DispatchBatchThread or to set if the request has been executed.
      * @param bool $value
      * @return bool
      */
-    public function hasBeenExecuted(bool $value = false): bool
+    public function hasBeenDispatched(bool $value = false): bool
     {
         if ($value) {
-            $this->validated = $value;
-            return $this->validated;
+            $this->dispatched = $value;
+            return $this->dispatched;
         }
-        return $this->validated;
+        return $this->dispatched;
+    }
+
+    /**
+     * Returns if the request has been completed or to set if it has been completed.
+     * @param bool $value
+     * @return bool
+     */
+    public function hasBeenCompleted(bool $value = false): bool
+    {
+        if($value) {
+            $this->completed = $value;
+            return $this->completed;
+        }
+        return $this->completed;
     }
 
     /**
