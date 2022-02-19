@@ -24,16 +24,18 @@ class DispatchBatchThread extends Thread
     /**
      * @param Volatile $container
      * @param int $type
+     * @param int|null $batch
      */
-    public function __construct(Volatile $container, int $type)
+    public function __construct(Volatile $container, int $type, int $batch = null)
     {
+        if($batch != null){
+            $this->batch = $batch;
+        }
         $this->type = $type;
         $this->container = $container;
         require_once($this->container['folder'] . "/Utils/SQLRequestException.php");
         require_once($this->container['folder'] . "/Utils/SQLRequest.php");
         require_once($this->container['folder'] . "/Utils/SQLConnString.php");
-
-        var_dump("thread {$this->getThreadId()} started!");
     }
 
     /**
@@ -51,16 +53,10 @@ class DispatchBatchThread extends Thread
                 }
             }
         }else{
-            while ($this->container['runThread'][self::HELP_THREAD][$this->batch]) {
-                if (microtime(true) >= $nextTime) {
-                    $nextTime = microtime(true) + $this->executionInterval;
-                    $this->processThread();
-                }
-            }
+            $this->processThread();
         }
-        var_dump('Killing thread ' . $this->getThreadId() . '...');
-        if(isset($this->container['runThread'][self::HELP_THREAD][$this->batch])){
-            $this->container['runThread'][self::HELP_THREAD][$this->batch] = null;
+        if(isset($this->container['runThread'][self::HELP_THREAD][$this->getThreadId()])){
+            unset($this->container['runThread'][self::HELP_THREAD][$this->getThreadId()]);
         }
     }
 
@@ -69,7 +65,9 @@ class DispatchBatchThread extends Thread
      */
     private function processThread(): void
     {
-        var_dump("running thread {$this->getThreadId()} with batch {$this->batch}");
+        $start = microtime(true);
+        $c = count($this->container['batch'][$this->batch]);
+        var_dump("running thread {$this->getThreadId()} with batch $this->batch: ($c) requests");
         # Categorize queries into connStrings & creating MySQL connections.
         /** @var mysqli[] $connections */
         $connections = [];
@@ -114,11 +112,11 @@ class DispatchBatchThread extends Thread
                 $this->container['callbackResults'][$query->getId()] = $data;
                 $stmt->close();
                 unset($queryContainers[$query->getConnString()->getName()][$query->getId()]);
-                var_dump("{$query->getId()} has been processed!");
             }
         }
-        if($this->type != self::MAIN_THREAD){
-            $this->container['runThread'][self::HELP_THREAD][$this->batch] = false;
+        if($this->type == self::HELP_THREAD){
+            $elapsed = microtime(true) - $start;
+            var_dump("Finished to process all queries! Took $elapsed seconds, executed: $c requests");
         }
     }
 

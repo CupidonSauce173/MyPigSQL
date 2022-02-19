@@ -10,8 +10,8 @@ class SQLRequest
     private null|string $dataTypes = null;
     private null|array $dataKeys = null;
     private null|SQLConnString $connString = null;
-    private bool $dispatched = false;
-    private bool $completed = false;
+    private bool $dispatched;
+    private bool $completed;
     private string $id;
     private int $batch = 0;
 
@@ -46,6 +46,8 @@ class SQLRequest
         $result->setConnString($connString);
         $result->setCallable($callback);
         $result->setBatch();
+        $result->setDispatched(false);
+        $result->setCompleted(false);
         return $result;
     }
 
@@ -88,31 +90,39 @@ class SQLRequest
     }
 
     /**
-     * Returns if the request has been dispatched to the DispatchBatchThread or to set if the request has been executed.
-     * @param bool $value
+     * Returns if the request has been dispatched to the DispatchBatchThread
      * @return bool
      */
-    public function hasBeenDispatched(bool $value = false): bool
+    public function hasBeenDispatched(): bool
     {
-        if ($value) {
-            $this->dispatched = $value;
-            return $this->dispatched;
-        }
         return $this->dispatched;
     }
 
     /**
-     * Returns if the request has been completed or to set if it has been completed.
+     * To set if the request has been executed.
      * @param bool $value
+     */
+    public function setDispatched(bool $value = true): void
+    {
+        $this->dispatched = $value;
+    }
+
+    /**
+     * Returns if the request has been completed
      * @return bool
      */
-    public function hasBeenCompleted(bool $value = false): bool
+    public function hasBeenCompleted(): bool
     {
-        if($value) {
-            $this->completed = $value;
-            return $this->completed;
-        }
         return $this->completed;
+    }
+
+    /**
+     * To set if it has been completed.
+     * @param bool $value
+     */
+    public function setCompleted(bool $value = true): void
+    {
+        $this->completed = $value;
     }
 
     /**
