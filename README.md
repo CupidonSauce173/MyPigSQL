@@ -3,10 +3,16 @@
 </p>
 <h1 align="center"> MyPigSQL </h1>
 <p align="center">Join my discord: https://discord.gg/2QAPHbqrny </p>
-<p align="center"> Async MySQL Framework for PocketMine-MP </p>
+<p align="center"> Async MySQL Library for PocketMine-MP </p>
 
-### Known Issues
-- There are some weird behaviors still, **do not use this for production server until further notice. I will be testing it on a network first and fix all possible issues**.
+### Current  Bugs
+- There are `zombie SQLRequest` that can stay in the batches but they won't be executed multiple times and are extremely rare.
+- The repeating `ClosureTask` task taking care of firing up the `DispatchBatchThreads` and preparing the requests isn't optimized and can overload the main thread if there are too many requests. This has been observed when creating a request every 1-3 ticks.
+- For some reason, `SQLRequest::setDispatched()` & `SQLRequest::setCompleted()` will not set the value to `true` if the developer passes no variable to them (they are using `bool $value = true` when passing no variable to them. 
+
+See [this merge](https://github.com/CupidonSauce173/MyPigSQL/pull/3) for a full update from `2.0.0-beta` to `3.0.0-beta`.
+
+## Library
 
 | **Feature**                 | **State** | 
 | --------------------------- |:----------:|
@@ -15,6 +21,8 @@
 | SQLRequest Object           | ✔️ |
 | SQLRequestExceptions        | ✔️ |
 | SQLRequest Completions      | ✔️ |
+| DispatchBatchThread         | ✔️ |
+| DispatchBatchPool           | 🛠️ |
 
 ### Prerequisites
 
@@ -194,9 +202,12 @@ Here is a list of the other functions related to SQLRequests.
 
 ```php
 MyPigSQL::addQueryToBatch($request); # Will register the request to the batch.
-MyPigSQL::removeQueryFromBatch($id); # Will unset the request from the batch, must be supplied with the request's id.
+MyPigSQL::removeQueryFromBatch($id, $batch); # Will unset the request from the batch, must be supplied with the request's id & batch.
 MyPigSQL::getQueryFromBatch($id); # Will return the Utils object from the batch, must be supplied with the request's id.
 ```
+### DispatchBatchPool
+`New Since 3.0.0-beta`
+This class extends `Pool` and has, for now, no methods. But the end goal will be to let users create their own batches of requests and send them over a custom `DispatchBatchPool ` where they will be able to set a batch, the amount of `DispatchBatchThread` they want in them and other few options. The batch will be divided by the amount of `DispatchBathThread` the user set.
 
 ### Notes
 
