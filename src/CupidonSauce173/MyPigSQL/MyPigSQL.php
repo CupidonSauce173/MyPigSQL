@@ -27,7 +27,6 @@ class MyPigSQL extends PluginBase
 
 
     # Since 2.0.0
-    private array $dispatchBatchThreadPool = [];
     private array $config = [];
 
     /**
@@ -172,36 +171,6 @@ class MyPigSQL extends PluginBase
         $this->dispatchBatchTask->setExecutionInterval($this->config['batch-execution-interval']);
         $this->dispatchBatchTask->start();
 
-        $this->getScheduler()->scheduleRepeatingTask(new ClosureTask(function () {
-            $go = mt_rand(0, 1);
-            if ($go) {
-                MyPigSQL::addQueryToBatch(SQLRequest::create(
-                    'UPDATE players SET shards = shards + ? WHERE username = ?',
-                    'is',
-                    [1, 'CupidonSauce173'],
-                    MyPigSQL::getSQLConnStringByName('mainDB'),
-                    function(){
-                        var_dump('The request has been executed!');
-                    }
-                ));
-            }
-        }), 5);
-
-        $this->getScheduler()->scheduleRepeatingTask(new ClosureTask(function () {
-            foreach ($this->queryBatch as $index => $batch) {
-                $i = count($batch);
-                var_dump("-------------------------------------");
-                var_dump("There are $i requests in batch $index");
-                /** @var SQLRequest $request */
-                foreach ($batch as $request) {
-                    var_dump("request {$request->getId()} completed status:");
-                    var_dump($request->hasBeenDispatched());
-                    var_dump($request->getBatch());
-                }
-                var_dump("-------------------------------------");
-            }
-        }), 200);
-
         # Repeated Task to update the SQLRequests array.
         $this->getScheduler()->scheduleRepeatingTask(new ClosureTask(function () {
             foreach ($this->queryBatch as $batch) {
@@ -214,7 +183,7 @@ class MyPigSQL extends PluginBase
                     if (!isset($this->container['batch'][$request->getBatch()])) {
                         $this->container['batch'][$request->getBatch()] = [];
                     }
-                    $this->container['batch'][$request->getBatch()][$request->getId()] = serialize($request);
+                    $this->container['batch'][$request->getBatch()][$request->getId()] = $request;
                     $request->setCallable($callback);
 
                 }
@@ -225,9 +194,10 @@ class MyPigSQL extends PluginBase
             reset($this->queryBatch);
             $dispatchBatchPool = new DispatchBatchPool($key);
             for ($i = 1; $i < $key; $i++) {
+                $c = count($this->queryBatch[$i]);
+                if ($c == 0) continue;
                 $dispatchBatchPool->submit(new DispatchBatchThread($this->container, DispatchBatchThread::HELP_THREAD, $i));
             }
-            var_dump("$key threads dispatched.");
 
         }), 20 * $this->config['batch-update-interval']);
         # Repeated Task to execute the callables from the SQLRequests.
@@ -247,7 +217,7 @@ class MyPigSQL extends PluginBase
                     } else {
                         $data = (array)self::getInstance()->container['callbackResults'][$id];
                     }
-                    if($function != null){
+                    if ($function != null) {
                         call_user_func($function, $data);
                     }
                     $request->setCompleted(true);

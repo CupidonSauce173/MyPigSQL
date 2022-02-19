@@ -65,9 +65,6 @@ class DispatchBatchThread extends Thread
      */
     private function processThread(): void
     {
-        $start = microtime(true);
-        $c = count($this->container['batch'][$this->batch]);
-        var_dump("running thread {$this->getThreadId()} with batch $this->batch: ($c) requests");
         # Categorize queries into connStrings & creating MySQL connections.
         /** @var mysqli[] $connections */
         $connections = [];
@@ -77,7 +74,7 @@ class DispatchBatchThread extends Thread
         /** @var string $query */
         foreach ($this->container['batch'][$this->batch] as $id=>$serialized) {
             /** @var SQLRequest $query */
-            $query = unserialize($serialized);
+            $query = $serialized;
             # Verifying objects integrity.
             if (!$query instanceof SQLRequest) throw new SQLRequestException('Error while processing a SQLRequest');
             $connString = $query->getConnString();
@@ -113,10 +110,6 @@ class DispatchBatchThread extends Thread
                 $stmt->close();
                 unset($queryContainers[$query->getConnString()->getName()][$query->getId()]);
             }
-        }
-        if($this->type == self::HELP_THREAD){
-            $elapsed = microtime(true) - $start;
-            var_dump("Finished to process all queries! Took $elapsed seconds, executed: $c requests");
         }
     }
 
