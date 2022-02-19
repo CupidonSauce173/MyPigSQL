@@ -2,6 +2,7 @@
 
 namespace CupidonSauce173\MyPigSQL;
 
+use CupidonSauce173\MyPigSQL\Task\DispatchBatchPool;
 use CupidonSauce173\MyPigSQL\Task\DispatchBatchThread;
 use CupidonSauce173\MyPigSQL\Task\ValidationTask;
 use CupidonSauce173\MyPigSQL\Utils\SQLConnString;
@@ -16,16 +17,17 @@ use function file_exists;
 
 class MyPigSQL extends PluginBase
 {
-    /** @var DispatchBatchThread[] $dispatchBatchThreadPool */
-    private array $dispatchBatchThreadPool = [];
     static MyPigSQL $instance;
-    /** @var SQLRequest[] */
+    /** @var array[] $queryBatch */
     private array $queryBatch = [];
     /** @var SQLConnString[] $sqlConnStringContainer */
     private array $sqlConnStringContainer = [];
     private DispatchBatchThread $dispatchBatchTask;
-
     private Volatile $container;
+
+
+    # Since 2.0.0
+    private array $config = [];
 
     /**
      * Will validate a connection string by trying to connect to MySQL in an anonymous AsyncTask.
@@ -116,10 +118,25 @@ class MyPigSQL extends PluginBase
      */
     public static function addQueryToBatch(SQLRequest $request): void
     {
-        if (isset(self::getInstance()->queryBatch[$request->getId()])) {
+        $result = self::getQueryFromBatch($request->getId());
+        if($result != null){
             throw new SQLRequestException("There is already a request with the id {$request->getId()}.");
         }
-        self::getInstance()->queryBatch[$request->getId()] = $request;
+        if(!isset(self::getInstance()->queryBatch[$request->getBatch()])){
+            self::getInstance()->queryBatch[$request->getBatch()][$request->getId()] = $request;
+        }else{
+            $max = self::getInstance()->config['request-per-batch'];
+            $i = $request->getBatch();
+            while(count(self::getInstance()->queryBatch[$i]) > $max){
+                $i++;
+                if(!isset(self::getInstance()->queryBatch[$i])){
+                    self::getInstance()->queryBatch[$i] = [];
+                }
+            }
+            # Set the request in the corresponding batch.
+            $request->setBatch($i);
+            self::getInstance()->queryBatch[$i][$request->getId()] = $request;
+        }
     }
 
     function onLoad(): void
@@ -134,48 +151,76 @@ class MyPigSQL extends PluginBase
             $this->saveResource('config.yml');
         }
         $config = new Config($this->getDataFolder() . 'config.yml', Config::YAML);
-        $config = $config->getAll();
+        $this->config = $config->getAll();
 
         # Init volatile.
         $this->container = new Volatile();
-        $this->container['runThread'] = true;
+        $this->container['runThread'] = [];
+        $this->container['runThread'][DispatchBatchThread::MAIN_THREAD] = true;
+        $this->container['runThread'][DispatchBatchThread::HELP_THREAD] = [];
         $this->container['executedRequests'] = [];
         $this->container['batch'] = [];
+        $this->container['batch'][0] = [];
         $this->container['callbackResults'] = [];
         $this->container['folder'] = __DIR__;
 
+        $this->queryBatch = [];
+
         # Ini DispatchBatchThread and it's options.
-        $this->dispatchBatchTask = new DispatchBatchThread($this->container);
-        $this->dispatchBatchTask->setExecutionInterval($config['batch-execution-interval']);
+        $this->dispatchBatchTask = new DispatchBatchThread($this->container, DispatchBatchThread::MAIN_THREAD);
+        $this->dispatchBatchTask->setExecutionInterval($this->config['batch-execution-interval']);
         $this->dispatchBatchTask->start();
 
         # Repeated Task to update the SQLRequests array.
         $this->getScheduler()->scheduleRepeatingTask(new ClosureTask(function () {
-            foreach ($this->queryBatch as $request) {
-                if ($request->hasBeenExecuted()) return;
-                $request->hasBeenExecuted(true);
-                $callback = $request->getCallable();
-                $request->setCallable(null);
-                $this->container['batch'][$request->getId()] = serialize($request);
-                $request->setCallable($callback);
-            }
-        }), 20 * $config['batch-update-interval']);
+            foreach ($this->queryBatch as $batch) {
+                /** @var SQLRequest $request */
+                foreach ($batch as $request) {
+                    if ($request->hasBeenDispatched()) continue;
+                    $request->setDispatched(true);
+                    $callback = $request->getCallable();
+                    $request->setCallable(null);
+                    if (!isset($this->container['batch'][$request->getBatch()])) {
+                        $this->container['batch'][$request->getBatch()] = [];
+                    }
+                    $this->container['batch'][$request->getBatch()][$request->getId()] = $request;
+                    $request->setCallable($callback);
 
+                }
+            }
+            # Create & Start a new dispatchBatchThread for other batches.
+            end($this->queryBatch);
+            $key = key($this->queryBatch);
+            reset($this->queryBatch);
+            $dispatchBatchPool = new DispatchBatchPool($key);
+            for ($i = 1; $i < $key; $i++) {
+                $c = count($this->queryBatch[$i]);
+                if ($c == 0) continue;
+                $dispatchBatchPool->submit(new DispatchBatchThread($this->container, DispatchBatchThread::HELP_THREAD, $i));
+            }
+
+        }), 20 * $this->config['batch-update-interval']);
         # Repeated Task to execute the callables from the SQLRequests.
         $this->getScheduler()->scheduleRepeatingTask(new ClosureTask(function () {
             foreach ($this->container['executedRequests'] as $index => $id) {
                 unset($this->container['executedRequests'][$index]);
-                if (!isset($this->container['callbackResults'][$id])) return;
-                $request = self::getQueryFrombatch($id);
-                self::removeQueryFromBatch($id);
+                $request = null;
+                if (isset($this->container['callbackResults'][$id])) {
+                    $request = self::getQueryFrombatch($id);
+                }
                 if ($request instanceof SQLRequest) {
-                    if ($request->getCallable() == null) return;
+                    unset($this->queryBatch[$request->getBatch()][$request->getId()]);
+                    self::removeQueryFromBatch($request->getId(), $request->getBatch());
+                    $function = $request->getCallable();
                     if (!isset(self::getInstance()->container['callbackResults'][$id])) {
                         $data = null;
                     } else {
                         $data = (array)self::getInstance()->container['callbackResults'][$id];
                     }
-                    call_user_func($request->getCallable(), $data);
+                    if ($function != null) {
+                        call_user_func($function, $data);
+                    }
+                    $request->setCompleted(true);
                     unset(self::getInstance()->container['callbackResults'][$id]);
                 }
             }
@@ -185,34 +230,40 @@ class MyPigSQL extends PluginBase
     /**
      * Get a Utils from the batch by id.
      * @param string $id
-     * @return SQLRequest
-     * @throws SQLRequestException
+     * @return SQLRequest|null
      */
-    public static function getQueryFromBatch(string $id): SQLRequest
+    public static function getQueryFromBatch(string $id): ?SQLRequest
     {
-        if (!isset(self::getInstance()->queryBatch[$id])) {
-            throw new SQLRequestException("There is no SQLRequest with the id $id");
+        foreach(self::getInstance()->queryBatch as $batch){
+            /**
+             * @var string $id
+             * @var SQLRequest $request
+             */
+            foreach($batch as $request){
+                if($request->getId() == $id)
+                    return $request;
+            }
         }
-        return self::getInstance()->queryBatch[$id];
+        return null;
     }
 
     /**
      * To remove a query from the batch.
      * @param string $id
+     * @param int $batch
      * @return bool
-     * @throws SQLRequestException
      */
-    public static function removeQueryFromBatch(string $id): bool
+    public static function removeQueryFromBatch(string $id, int $batch): bool
     {
-        if (!isset(self::getInstance()->queryBatch[$id])) {
-            throw new SQLRequestException("Query: $id hasn't been registered in the batch.");
+        if(!isset(self::getInstance()->queryBatch[$batch][$id])){
+            return false;
         }
-        unset(self::getInstance()->queryBatch[$id]);
+        unset(self::getInstance()->queryBatch[$batch][$id]);
         return true;
     }
 
     protected function onDisable(): void
     {
-        $this->container['runThread'] = false;
+        $this->container['runThread'][DispatchBatchThread::MAIN_THREAD] = false;
     }
 }

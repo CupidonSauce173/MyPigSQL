@@ -10,8 +10,10 @@ class SQLRequest
     private null|string $dataTypes = null;
     private null|array $dataKeys = null;
     private null|SQLConnString $connString = null;
-    private bool $validated = false;
+    private bool $dispatched;
+    private bool $completed;
     private string $id;
+    private int $batch = 0;
 
     /** @var null|callable $callable */
     private $callable = null;
@@ -28,10 +30,11 @@ class SQLRequest
      * @param array $dataKeys
      * @param SQLConnString $connString
      * @param null|callable $callback
+     * @param int $batch
      * @return SQLRequest
      * @throws SQLRequestException
      */
-    public static function create(string $query, string $dataTypes, array $dataKeys, SQLConnString $connString, null|callable $callback = null): self
+    public static function create(string $query, string $dataTypes, array $dataKeys, SQLConnString $connString, null|callable $callback = null, int $batch = 0): self
     {
         $result = new self();
         if (empty($query)) {
@@ -42,7 +45,28 @@ class SQLRequest
         $result->setDataKeys($dataKeys);
         $result->setConnString($connString);
         $result->setCallable($callback);
+        $result->setBatch();
+        $result->setDispatched(false);
+        $result->setCompleted(false);
         return $result;
+    }
+
+    /**
+     * To set in which batch this request will be executed.
+     * @param int $batchNumber
+     */
+    public function setBatch(int $batchNumber = 0): void
+    {
+        $this->batch = $batchNumber;
+    }
+
+    /**
+     * Returns in which batch this request will be executed.
+     * @return int
+     */
+    public function getBatch(): int
+    {
+        return $this->batch;
     }
 
     /**
@@ -66,17 +90,39 @@ class SQLRequest
     }
 
     /**
-     * Returns if the request has been executed or to set if the request has been executed.
-     * @param bool $value
+     * Returns if the request has been dispatched to the DispatchBatchThread
      * @return bool
      */
-    public function hasBeenExecuted(bool $value = false): bool
+    public function hasBeenDispatched(): bool
     {
-        if ($value) {
-            $this->validated = $value;
-            return $this->validated;
-        }
-        return $this->validated;
+        return $this->dispatched;
+    }
+
+    /**
+     * To set if the request has been executed.
+     * @param bool $value
+     */
+    public function setDispatched(bool $value = true): void
+    {
+        $this->dispatched = $value;
+    }
+
+    /**
+     * Returns if the request has been completed
+     * @return bool
+     */
+    public function hasBeenCompleted(): bool
+    {
+        return $this->completed;
+    }
+
+    /**
+     * To set if it has been completed.
+     * @param bool $value
+     */
+    public function setCompleted(bool $value = true): void
+    {
+        $this->completed = $value;
     }
 
     /**
