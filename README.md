@@ -7,7 +7,6 @@
 
 ### Current  Bugs
 - There are `zombie SQLRequest` that can stay in the batches but they won't be executed multiple times and are extremely rare.
-- The repeating `ClosureTask` task taking care of firing up the `DispatchBatchThreads` and preparing the requests isn't optimized and can overload the main thread if there are too many requests. This has been observed when creating a request every 1-3 ticks.
 - For some reason, `SQLRequest::setDispatched()` & `SQLRequest::setCompleted()` will not set the value to `true` if the developer passes no variable to them (they are using `bool $value = true` when passing no variable to them. 
 
 See [this merge](https://github.com/CupidonSauce173/MyPigSQL/pull/3) for a full update from `2.0.0-beta` to `3.0.0-beta`.
