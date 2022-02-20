@@ -6,8 +6,7 @@
 <p align="center"> Async MySQL Library for PocketMine-MP </p>
 
 ### Current  Bugs
-- There are `zombie SQLRequest` that can stay in the batches but they won't be executed multiple times and are extremely rare.
-- For some reason, `SQLRequest::setDispatched()` & `SQLRequest::setCompleted()` will not set the value to `true` if the developer passes no variable to them (they are using `bool $value = true` when passing no variable to them. 
+- There are `zombie SQLRequest` that can stay in the batches but they won't be executed multiple times and are extremely rare. 
 
 See [this merge](https://github.com/CupidonSauce173/MyPigSQL/pull/3) for a full update from `2.0.0-beta` to `3.0.0-beta`.
 
