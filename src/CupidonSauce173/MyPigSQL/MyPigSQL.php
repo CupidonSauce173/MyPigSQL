@@ -13,20 +13,25 @@ use pocketmine\scheduler\ClosureTask;
 use pocketmine\utils\Config;
 use Volatile;
 use function call_user_func;
+use function count;
+use function end;
 use function file_exists;
+use function key;
+use function reset;
 
 class MyPigSQL extends PluginBase
 {
     static MyPigSQL $instance;
+
     /** @var array[] $queryBatch */
     private array $queryBatch = [];
     /** @var SQLConnString[] $sqlConnStringContainer */
     private array $sqlConnStringContainer = [];
+    /** @var callable[] */
+    private array $requestCallableContainer = [];
+
     private DispatchBatchThread $dispatchBatchTask;
     private Volatile $container;
-
-
-    # Since 2.0.0
     private array $config = [];
 
     /**
@@ -114,27 +119,26 @@ class MyPigSQL extends PluginBase
     /**
      * To add a new Utils in the Utils batch, it will encode the request and pack it to be dispatched later.
      * @param SQLRequest $request
-     * @throws SQLRequestException
      */
     public static function addQueryToBatch(SQLRequest $request): void
     {
-        $result = self::getQueryFromBatch($request->getId());
-        if($result != null){
-            throw new SQLRequestException("There is already a request with the id {$request->getId()}.");
-        }
-        if(!isset(self::getInstance()->queryBatch[$request->getBatch()])){
+        if (!isset(self::getInstance()->queryBatch[$request->getBatch()])) {
+            self::getInstance()->requestCallableContainer[$request->getId()] = $request->getCallable();
+            $request->setCallable(null);
             self::getInstance()->queryBatch[$request->getBatch()][$request->getId()] = $request;
-        }else{
+        } else {
             $max = self::getInstance()->config['request-per-batch'];
             $i = $request->getBatch();
-            while(count(self::getInstance()->queryBatch[$i]) > $max){
+            while (count(self::getInstance()->queryBatch[$i]) > $max) {
                 $i++;
-                if(!isset(self::getInstance()->queryBatch[$i])){
+                if (!isset(self::getInstance()->queryBatch[$i])) {
                     self::getInstance()->queryBatch[$i] = [];
                 }
             }
             # Set the request in the corresponding batch.
             $request->setBatch($i);
+            self::getInstance()->requestCallableContainer[$request->getId()] = $request->getCallable();
+            $request->setCallable(null);
             self::getInstance()->queryBatch[$i][$request->getId()] = $request;
         }
     }
@@ -178,14 +182,10 @@ class MyPigSQL extends PluginBase
                 foreach ($batch as $request) {
                     if ($request->hasBeenDispatched()) continue;
                     $request->setDispatched(true);
-                    $callback = $request->getCallable();
-                    $request->setCallable(null);
                     if (!isset($this->container['batch'][$request->getBatch()])) {
                         $this->container['batch'][$request->getBatch()] = [];
                     }
                     $this->container['batch'][$request->getBatch()][$request->getId()] = $request;
-                    $request->setCallable($callback);
-
                 }
             }
             # Create & Start a new dispatchBatchThread for other batches.
@@ -211,7 +211,7 @@ class MyPigSQL extends PluginBase
                 if ($request instanceof SQLRequest) {
                     unset($this->queryBatch[$request->getBatch()][$request->getId()]);
                     self::removeQueryFromBatch($request->getId(), $request->getBatch());
-                    $function = $request->getCallable();
+                    $function = self::getInstance()->requestCallableContainer[$request->getId()];
                     if (!isset(self::getInstance()->container['callbackResults'][$id])) {
                         $data = null;
                     } else {
@@ -222,6 +222,7 @@ class MyPigSQL extends PluginBase
                     }
                     $request->setCompleted(true);
                     unset(self::getInstance()->container['callbackResults'][$id]);
+                    unset(self::getInstance()->requestCallableContainer[$request->getId()]);
                 }
             }
         }), 20);
@@ -234,13 +235,13 @@ class MyPigSQL extends PluginBase
      */
     public static function getQueryFromBatch(string $id): ?SQLRequest
     {
-        foreach(self::getInstance()->queryBatch as $batch){
+        foreach (self::getInstance()->queryBatch as $batch) {
             /**
              * @var string $id
              * @var SQLRequest $request
              */
-            foreach($batch as $request){
-                if($request->getId() == $id)
+            foreach ($batch as $request) {
+                if ($request->getId() == $id)
                     return $request;
             }
         }
@@ -255,7 +256,7 @@ class MyPigSQL extends PluginBase
      */
     public static function removeQueryFromBatch(string $id, int $batch): bool
     {
-        if(!isset(self::getInstance()->queryBatch[$batch][$id])){
+        if (!isset(self::getInstance()->queryBatch[$batch][$id])) {
             return false;
         }
         unset(self::getInstance()->queryBatch[$batch][$id]);

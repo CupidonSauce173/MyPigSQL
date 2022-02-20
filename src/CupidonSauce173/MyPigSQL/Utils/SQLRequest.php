@@ -52,12 +52,21 @@ class SQLRequest
     }
 
     /**
-     * To set in which batch this request will be executed.
-     * @param int $batchNumber
+     * To set if the request has been executed.
+     * @param bool $value
      */
-    public function setBatch(int $batchNumber = 0): void
+    public function setDispatched(bool $value = true): void
     {
-        $this->batch = $batchNumber;
+        $this->dispatched = $value;
+    }
+
+    /**
+     * To set if it has been completed.
+     * @param bool $value
+     */
+    public function setCompleted(bool $value = true): void
+    {
+        $this->completed = $value;
     }
 
     /**
@@ -67,6 +76,15 @@ class SQLRequest
     public function getBatch(): int
     {
         return $this->batch;
+    }
+
+    /**
+     * To set in which batch this request will be executed.
+     * @param int $batchNumber
+     */
+    public function setBatch(int $batchNumber = 0): void
+    {
+        $this->batch = $batchNumber;
     }
 
     /**
@@ -99,30 +117,12 @@ class SQLRequest
     }
 
     /**
-     * To set if the request has been executed.
-     * @param bool $value
-     */
-    public function setDispatched(bool $value = true): void
-    {
-        $this->dispatched = $value;
-    }
-
-    /**
      * Returns if the request has been completed
      * @return bool
      */
     public function hasBeenCompleted(): bool
     {
         return $this->completed;
-    }
-
-    /**
-     * To set if it has been completed.
-     * @param bool $value
-     */
-    public function setCompleted(bool $value = true): void
-    {
-        $this->completed = $value;
     }
 
     /**

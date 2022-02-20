@@ -8,18 +8,19 @@ use CupidonSauce173\MyPigSQL\Utils\SQLRequestException;
 use mysqli;
 use Thread;
 use Volatile;
+use function in_array;
 use function microtime;
 
 class DispatchBatchThread extends Thread
 {
-    private int $executionInterval = 2;
-    private Volatile $container;
+const MAIN_THREAD = 0;
+const HELP_THREAD = 1;
 
     # Since 2.0.0
-    private int $type;
-    private int $batch = 0;
-    const MAIN_THREAD = 0; # Is the main thread that never stops until pmmp stops.
-    const HELP_THREAD = 1; # Only starts when more than 1 request batch.
+    private int $executionInterval = 2;
+    private Volatile $container;
+        private int $type; # Is the main thread that never stops until pmmp stops.
+        private int $batch = 0; # Only starts when more than 1 request batch.
 
     /**
      * @param Volatile $container
@@ -28,7 +29,7 @@ class DispatchBatchThread extends Thread
      */
     public function __construct(Volatile $container, int $type, int $batch = null)
     {
-        if($batch != null){
+        if ($batch != null) {
             $this->batch = $batch;
         }
         $this->type = $type;
@@ -45,17 +46,17 @@ class DispatchBatchThread extends Thread
     {
         $nextTime = microtime(true) + 1;
 
-        if($this->type == self::MAIN_THREAD){
+        if ($this->type == self::MAIN_THREAD) {
             while ($this->container['runThread'][self::MAIN_THREAD]) {
                 if (microtime(true) >= $nextTime) {
                     $nextTime = microtime(true) + $this->executionInterval;
                     $this->processThread();
                 }
             }
-        }else{
+        } else {
             $this->processThread();
         }
-        if(isset($this->container['runThread'][self::HELP_THREAD][$this->getThreadId()])){
+        if (isset($this->container['runThread'][self::HELP_THREAD][$this->getThreadId()])) {
             unset($this->container['runThread'][self::HELP_THREAD][$this->getThreadId()]);
         }
     }
@@ -72,7 +73,7 @@ class DispatchBatchThread extends Thread
         $queryContainers = []; // Categorized queries by SQLConnStrings.
 
         /** @var string $query */
-        foreach ($this->container['batch'][$this->batch] as $id=>$serialized) {
+        foreach ($this->container['batch'][$this->batch] as $id => $serialized) {
             /** @var SQLRequest $query */
             $query = $serialized;
             # Verifying objects integrity.
