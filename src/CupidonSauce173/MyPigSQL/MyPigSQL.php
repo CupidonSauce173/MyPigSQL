@@ -192,7 +192,7 @@ class MyPigSQL extends PluginBase
             end($this->queryBatch);
             $key = key($this->queryBatch);
             reset($this->queryBatch);
-            $dispatchBatchPool = new DispatchBatchPool($key);
+            $dispatchBatchPool = new DispatchBatchPool($key, 'Worker');
             for ($i = 1; $i < $key; $i++) {
                 $c = count($this->queryBatch[$i]);
                 if ($c == 0) continue;
@@ -237,7 +237,6 @@ class MyPigSQL extends PluginBase
     {
         foreach (self::getInstance()->queryBatch as $batch) {
             /**
-             * @var string $id
              * @var SQLRequest $request
              */
             foreach ($batch as $request) {

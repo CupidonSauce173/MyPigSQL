@@ -13,14 +13,14 @@ use function microtime;
 
 class DispatchBatchThread extends Thread
 {
-const MAIN_THREAD = 0;
-const HELP_THREAD = 1;
+    const MAIN_THREAD = 0;
+    const HELP_THREAD = 1;
 
     # Since 2.0.0
     private int $executionInterval = 2;
     private Volatile $container;
-        private int $type; # Is the main thread that never stops until pmmp stops.
-        private int $batch = 0; # Only starts when more than 1 request batch.
+    private int $type; # Is the main thread that never stops until pmmp stops.
+    private int $batch = 0; # Only starts when more than 1 request batch.
 
     /**
      * @param Volatile $container
@@ -72,7 +72,10 @@ const HELP_THREAD = 1;
         /** @var string[] $queryContainers */
         $queryContainers = []; // Categorized queries by SQLConnStrings.
 
-        /** @var string $query */
+        /**
+         * @var string $id
+         * @var string $serialized
+         */
         foreach ($this->container['batch'][$this->batch] as $id => $serialized) {
             /** @var SQLRequest $query */
             $query = $serialized;
