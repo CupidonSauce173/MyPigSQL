@@ -4,3 +4,8 @@ batch-execution-interval: 2
 batch-update-interval: 2
 # Set the maximum SQLRequests per batch, will create a new batch and execute it in another DispatchBatchThread on execution.
 request-per-batch: 20
+
+# Default size of the buffers. [NEW]
+default-buffer-size: 20
+# Time before a buffer gets destroyed if there isn't any request. (In second) [NEW]
+buffer-timeout: 10

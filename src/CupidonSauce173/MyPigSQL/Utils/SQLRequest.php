@@ -217,4 +217,8 @@ class SQLRequest
         $this->connString = $connString;
         return $this;
     }
+
+    public function register(): void{
+
+    }
 }

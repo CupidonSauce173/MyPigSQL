@@ -5,13 +5,16 @@ namespace CupidonSauce173\MyPigSQL;
 use CupidonSauce173\MyPigSQL\Task\DispatchBatchPool;
 use CupidonSauce173\MyPigSQL\Task\DispatchBatchThread;
 use CupidonSauce173\MyPigSQL\Task\ValidationTask;
+use CupidonSauce173\MyPigSQL\Utils\BatchBuffer;
 use CupidonSauce173\MyPigSQL\Utils\SQLConnString;
 use CupidonSauce173\MyPigSQL\Utils\SQLRequest;
 use CupidonSauce173\MyPigSQL\Utils\SQLRequestException;
+
 use pocketmine\plugin\PluginBase;
 use pocketmine\scheduler\ClosureTask;
 use pocketmine\utils\Config;
 use Volatile;
+
 use function call_user_func;
 use function count;
 use function end;
@@ -32,7 +35,7 @@ class MyPigSQL extends PluginBase
 
     private DispatchBatchThread $dispatchBatchTask;
     private Volatile $container;
-    private array $config = [];
+    public array $config = [];
 
     /**
      * Will validate a connection string by trying to connect to MySQL in an anonymous AsyncTask.
@@ -41,7 +44,7 @@ class MyPigSQL extends PluginBase
     public static function validateConnString(array $connString)
     {
         # Will validate connection by trying to connect async.
-        MyPigSQL::getInstance()->getServer()->getAsyncPool()->submitTask(new ValidationTask($connString));
+        self::getInstance()->getServer()->getAsyncPool()->submitTask(new ValidationTask($connString));
     }
 
     /**
@@ -114,6 +117,11 @@ class MyPigSQL extends PluginBase
             throw new SQLRequestException('No SQLConnString object has the name: ' . $connName);
         }
         return self::getInstance()->sqlConnStringContainer[$connName];
+    }
+
+    public static function addRequestToBuffer(SQLRequest $request): void
+    {
+
     }
 
     /**
@@ -236,9 +244,6 @@ class MyPigSQL extends PluginBase
     public static function getQueryFromBatch(string $id): ?SQLRequest
     {
         foreach (self::getInstance()->queryBatch as $batch) {
-            /**
-             * @var SQLRequest $request
-             */
             foreach ($batch as $request) {
                 if ($request->getId() == $id)
                     return $request;
