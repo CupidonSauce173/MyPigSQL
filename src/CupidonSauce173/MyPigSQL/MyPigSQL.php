@@ -119,11 +119,6 @@ class MyPigSQL extends PluginBase
         return self::getInstance()->sqlConnStringContainer[$connName];
     }
 
-    public static function addRequestToBuffer(SQLRequest $request): void
-    {
-
-    }
-
     /**
      * To add a new Utils in the Utils batch, it will encode the request and pack it to be dispatched later.
      * @param SQLRequest $request
