@@ -1,7 +1,7 @@
 --- # Poggit-CI Manifest. Open the CI at https://poggit.pmmp.io/ci/CupidonSauce173/MyPigSQL
 build-by-default: true
 branches:
-- main
+  - main
 projects:
   MyPigSQL:
     path: ""

@@ -9,34 +9,29 @@ use mysqli;
 use Thread;
 use Volatile;
 use function in_array;
-use function microtime;
 
 class DispatchBatchThread extends Thread
 {
     const MAIN_THREAD = 0;
     const HELP_THREAD = 1;
 
-    # Since 2.0.0
     private int $executionInterval = 2;
     private Volatile $container;
-    private int $type; # Is the main thread that never stops until pmmp stops.
-    private int $batch = 0; # Only starts when more than 1 request batch.
+    private int $type;
+    private int $batch = 0;
 
     /**
      * @param Volatile $container
      * @param int $type
      * @param int|null $batch
      */
-    public function __construct(Volatile $container, int $type, int $batch = null)
+    public function __construct(Volatile $container, int $type, ?int $batch = null)
     {
-        if ($batch != null) {
+        if ($batch !== null) {
             $this->batch = $batch;
         }
         $this->type = $type;
         $this->container = $container;
-        require_once($this->container['folder'] . "/Utils/SQLRequestException.php");
-        require_once($this->container['folder'] . "/Utils/SQLRequest.php");
-        require_once($this->container['folder'] . "/Utils/SQLConnString.php");
     }
 
     /**
@@ -46,7 +41,7 @@ class DispatchBatchThread extends Thread
     {
         $nextTime = microtime(true) + 1;
 
-        if ($this->type == self::MAIN_THREAD) {
+        if ($this->type === self::MAIN_THREAD) {
             while ($this->container['runThread'][self::MAIN_THREAD]) {
                 if (microtime(true) >= $nextTime) {
                     $nextTime = microtime(true) + $this->executionInterval;
@@ -56,9 +51,8 @@ class DispatchBatchThread extends Thread
         } else {
             $this->processThread();
         }
-        if (isset($this->container['runThread'][self::HELP_THREAD][$this->getThreadId()])) {
-            unset($this->container['runThread'][self::HELP_THREAD][$this->getThreadId()]);
-        }
+
+        $this->cleanupThread();
     }
 
     /**
@@ -66,37 +60,32 @@ class DispatchBatchThread extends Thread
      */
     private function processThread(): void
     {
-        # Categorize queries into connStrings & creating MySQL connections.
-        /** @var mysqli[] $connections */
         $connections = [];
-        /** @var string[] $queryContainers */
-        $queryContainers = []; // Categorized queries by SQLConnStrings.
+        $queryContainers = [];
 
-        /**
-         * @var string $id
-         * @var string $serialized
-         */
         foreach ($this->container['batch'][$this->batch] as $id => $serialized) {
-            /** @var SQLRequest $query */
             $query = $serialized;
-            # Verifying objects integrity.
-            if (!$query instanceof SQLRequest) throw new SQLRequestException('Error while processing a SQLRequest');
+            if (!$query instanceof SQLRequest) {
+                throw new SQLRequestException('Error while processing a SQLRequest');
+            }
             $connString = $query->getConnString();
-            if (!$connString instanceof SQLConnString) throw new SQLRequestException('Error while processing a SQLConnString');
+            if (!$connString instanceof SQLConnString) {
+                throw new SQLRequestException('Error while processing a SQLConnString');
+            }
             if (!isset($queryContainers[$connString->getName()])) {
                 $queryContainers[$connString->getName()] = [];
+                $connections[$connString->getName()] = $this->createConnection($connString);
             }
-            $connections[$connString->getName()] = $this->createConnection($connString);
-            if (isset($queryContainers[$connString->getName()][$query->getId()])) return;
+            if (isset($queryContainers[$connString->getName()][$query->getId()])) continue;
             $queryContainers[$connString->getName()][$query->getId()] = $query;
-            # Removing SQLRequest from the batch.
             unset($this->container['batch'][$this->batch][$id]);
         }
-        # Process all queries
+
         foreach ($queryContainers as $databaseQueries) {
-            /** @var SQLRequest $query */
             foreach ($databaseQueries as $query) {
-                if (in_array($query->getId(), (array)$this->container['executedRequests'])) return;
+                if (in_array($query->getId(), (array)$this->container['executedRequests'])) {
+                    continue;
+                }
                 $this->container['executedRequests'][] = $query->getId();
                 $stmt = $connections[$query->getConnString()->getName()]->prepare($query->getQuery());
                 $stmt->bind_param($query->getDataTypes(), ...$query->getDataKeys());
@@ -105,11 +94,7 @@ class DispatchBatchThread extends Thread
                     throw new SQLRequestException($stmt->error);
                 }
                 $results = $stmt->get_result();
-                $data = null;
-                if ($results !== false) {
-                    $data = $results->fetch_assoc();
-                }
-                if ($data == null) $data = false;
+                $data = $results !== false ? $results->fetch_assoc() : false;
                 $this->container['callbackResults'][$query->getId()] = $data;
                 $stmt->close();
                 unset($queryContainers[$query->getConnString()->getName()][$query->getId()]);
@@ -118,7 +103,7 @@ class DispatchBatchThread extends Thread
     }
 
     /**
-     * Creates & returns mysqli
+     * Creates a SQL connection
      * @param SQLConnString $connString
      * @return mysqli
      */
@@ -133,8 +118,14 @@ class DispatchBatchThread extends Thread
         );
     }
 
+    private function cleanupThread(): void
+    {
+        if (isset($this->container['runThread'][self::HELP_THREAD][$this->getThreadId()])) {
+            unset($this->container['runThread'][self::HELP_THREAD][$this->getThreadId()]);
+        }
+    }
+
     /**
-     * Function to set the execution interval.
      * @param int $seconds
      */
     public function setExecutionInterval(int $seconds): void
@@ -142,10 +133,6 @@ class DispatchBatchThread extends Thread
         $this->executionInterval = $seconds;
     }
 
-    /**
-     * Function to set the batch that the thread will take care of.
-     * @param int $batch
-     */
     public function setBatchToExecute(int $batch): void
     {
         $this->batch = $batch;

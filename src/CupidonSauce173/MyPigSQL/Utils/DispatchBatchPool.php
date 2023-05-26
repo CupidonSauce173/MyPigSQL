@@ -1,6 +1,6 @@
 <?php
 
-namespace CupidonSauce173\MyPigSQL\Task;
+namespace CupidonSauce173\MyPigSQL\Utils;
 
 use Pool;
 

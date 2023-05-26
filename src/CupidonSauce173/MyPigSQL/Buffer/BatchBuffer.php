@@ -18,10 +18,10 @@ class BatchBuffer extends Volatile
         $this->buffer[0] = [];
         $this->id = uniqid();
 
-        if($timeOut == null){
+        if ($timeOut == null) {
             $this->timeOut = MyPigSQL::getInstance()->config['buffer-timeout'];
         }
-        if($batchSize == null){
+        if ($batchSize == null) {
             $this->size = MyPigSQL::getInstance()->config['default-buffer-size'];
         }
     }
@@ -30,8 +30,9 @@ class BatchBuffer extends Volatile
      * Need more verifications but will tell if the buffer is available for future use.
      * @return bool
      */
-    public function isAvailable(): bool{
-        if(count($this->buffer[0]) < $this->size){
+    public function isAvailable(): bool
+    {
+        if (count($this->buffer[0]) < $this->size) {
             return true;
         }
         return false;
@@ -41,7 +42,8 @@ class BatchBuffer extends Volatile
      * Returns the id of this buffer
      * @return string
      */
-    public function getId(): string{
+    public function getId(): string
+    {
         return $this->id;
     }
 
@@ -49,7 +51,8 @@ class BatchBuffer extends Volatile
      * Returns the timeout value of the batch before it gets destroyed (when inactive).
      * @return int
      */
-    public function getTimeOut(): int{
+    public function getTimeOut(): int
+    {
         return $this->timeOut;
     }
 
@@ -57,7 +60,8 @@ class BatchBuffer extends Volatile
      * Sets the timeout of the batch before it gets destroyed (when inactive).
      * @param int $timeOut
      */
-    public function setTimeOut(int $timeOut): void{
+    public function setTimeOut(int $timeOut): void
+    {
         $this->timeOut = $timeOut;
     }
 
@@ -65,7 +69,8 @@ class BatchBuffer extends Volatile
      * Add an SQLRequest to the buffer
      * @param SQLRequest $request
      */
-    public function addRequest(SQLRequest $request){
+    public function addRequest(SQLRequest $request)
+    {
         $this->buffer[0][$request->getId()] = $request;
     }
 
@@ -73,8 +78,9 @@ class BatchBuffer extends Volatile
      * Remove an SQLRequest from the buffer
      * @param string $id
      */
-    public function removeRequest(string $id){
-        if(isset($this->buffer[0][$id])){
+    public function removeRequest(string $id)
+    {
+        if (isset($this->buffer[0][$id])) {
             unset($this->buffer[0][$id]);
         }
     }
@@ -83,7 +89,8 @@ class BatchBuffer extends Volatile
      * Get the current buffer size, which is the amount of SQLRequests the buffer holds.
      * @return int
      */
-    public function getBufferSize(): int{
+    public function getBufferSize(): int
+    {
         return $this->size;
     }
 
@@ -91,7 +98,8 @@ class BatchBuffer extends Volatile
      * Set the buffer size, which is the maximum amount of SQLRequests the buffer can hold.
      * @param int $value
      */
-    public function setBufferSize(int $value){
+    public function setBufferSize(int $value)
+    {
         $this->size = $value;
     }
 }

@@ -6,9 +6,12 @@
 <p align="center"> Async MySQL Library for PocketMine-MP </p>
 
 ### Current  Bugs
-- There are `zombie SQLRequest` that can stay in the batches but they won't be executed multiple times and are extremely rare. 
 
-See [this merge](https://github.com/CupidonSauce173/MyPigSQL/pull/3) for a full update from `2.0.0-beta` to `3.0.0-beta`.
+- There are `zombie SQLRequest` that can stay in the batches but they won't be executed multiple times and are extremely
+  rare.
+
+See [this merge](https://github.com/CupidonSauce173/MyPigSQL/pull/3) for a full update from `2.0.0-beta` to `3.0.0-beta`
+.
 
 ## Library
 
@@ -62,6 +65,7 @@ $connString->setDatabase('notifications');
 $connString->setPort(3589); # 3306 is the default port if none is supplied.
 $connString->validate();
 ```
+
 There are quite a few variables you can give to the SQLConnString object. Here's a table of the different variables.
 
 | **Property** | **DataType** | **Description** | 
@@ -179,7 +183,8 @@ $request->setCallable(function(array $data) use ($player){
         ));
     }
 ```
-There are quite a few variables you can give to the SQLRequest object. Here's a table of the different variables. 
+
+There are quite a few variables you can give to the SQLRequest object. Here's a table of the different variables.
 
 | **Property** | **DataType**   | **Description** | 
 | ------------ | :------------- | :------------- |
@@ -203,9 +208,14 @@ MyPigSQL::addQueryToBatch($request); # Will register the request to the batch.
 MyPigSQL::removeQueryFromBatch($id, $batch); # Will unset the request from the batch, must be supplied with the request's id & batch.
 MyPigSQL::getQueryFromBatch($id); # Will return the Utils object from the batch, must be supplied with the request's id.
 ```
+
 ### DispatchBatchPool
+
 `New Since 3.0.0-beta`
-This class extends `Pool` and has, for now, no methods. But the end goal will be to let users create their own batches of requests and send them over a custom `DispatchBatchPool ` where they will be able to set a batch, the amount of `DispatchBatchThread` they want in them and other few options. The batch will be divided by the amount of `DispatchBathThread` the user set.
+This class extends `Pool` and has, for now, no methods. But the end goal will be to let users create their own batches
+of requests and send them over a custom `DispatchBatchPool ` where they will be able to set a batch, the amount
+of `DispatchBatchThread` they want in them and other few options. The batch will be divided by the amount
+of `DispatchBathThread` the user set.
 
 ### Notes
 
@@ -216,4 +226,7 @@ This class extends `Pool` and has, for now, no methods. But the end goal will be
 4. A thread for each SQLConnStrings might be implemented to speed up the execution of the batch.
 
 ### Why this?
-I made this plugin in my spare time because I didn't want to use another library for my network and because I am planning to connect all my other systems (PigNotify, PigFriend & more to come) "together". My only problem was the use of threads for each plugins so this library fixes the issue by using one thread for all other systems.
+
+I made this plugin in my spare time because I didn't want to use another library for my network and because I am
+planning to connect all my other systems (PigNotify, PigFriend & more to come) "together". My only problem was the use
+of threads for each plugins so this library fixes the issue by using one thread for all other systems.

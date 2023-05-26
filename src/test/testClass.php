@@ -1,9 +1,10 @@
 <?php
 
-use CupidonSauce173\MyPigSQL\Utils\BatchBuffer;
-use CupidonSauce173\MyPigSQL\Utils\SQLRequest;
-use CupidonSauce173\MyPigSQL\Utils\SQLConnString;
+namespace test;
+
 use CupidonSauce173\MyPigSQL\MyPigSQL;
+use CupidonSauce173\MyPigSQL\Utils\SQLConnString;
+use CupidonSauce173\MyPigSQL\Utils\SQLRequest;
 use CupidonSauce173\MyPigSQL\Utils\SQLRequestException;
 
 class testClass
@@ -30,7 +31,7 @@ class testClass
             "s",
             ['CupidonSauce173'],
             $connString,
-            function($data){
+            function ($data) {
                 var_dump("SQLRequest has been processed with success! Data retrieved: " . $data);
             }
         );
@@ -45,13 +46,14 @@ class testClass
             ->setDataTypes("s")
             ->setDataKeys([$player])
             ->setConnString($connTestTwo)
-            ->setCallable(function($data) use ($player){
-                if((int)$data > 100){
+            ->setCallable(function ($data) use ($player) {
+                if ((int)$data > 100) {
                     var_dump($player . " has more than 100$!");
                 }
             });
         MyPigSQL::addQueryToBatch($testSqlRTwo); # Registers the SQLRequest in an available BatchBuffer from the Core's static method.
 
+        /*
         # BatchBuffer registration example.
         $batchBuffer = new BatchBuffer();
         $batchBuffer->setBufferSize(50);
@@ -60,7 +62,7 @@ class testClass
 
         $batchBufferTwo = new BatchBuffer(20, 15); # arg1 = timeOut (seconds), arg2 = SQLRequest max hold.
         $batchBufferTwo->register(); # Registers the buffer in the container.
-
+        */
         MyPigSQL::unregisterStringConn(MyPigSQL::getSQLConnStringByName("MainPlayerDb"));
     }
 }

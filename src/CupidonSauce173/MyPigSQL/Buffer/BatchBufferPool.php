@@ -17,7 +17,7 @@ class BatchBufferPool
         $batch = $this->selectBatch();
 
         $executable = $request->getCallable();
-        if($executable !== null){
+        if ($executable !== null) {
             $this->executables[$request->getId()] = $request->getCallable();
             $request->setCallable(null);
         }
@@ -27,12 +27,12 @@ class BatchBufferPool
     public function selectBatch(): BatchBuffer
     {
         $batch = null;
-        foreach($this->batches as $batchBuffer){
-            if($batchBuffer->isAvailable()){
+        foreach ($this->batches as $batchBuffer) {
+            if ($batchBuffer->isAvailable()) {
                 $batch = $batchBuffer;
             }
         }
-        if($batch == null){
+        if ($batch == null) {
             $nb = new BatchBuffer();
             $this->batches[$nb->getId()] = $nb;
             $batch = $nb;
@@ -42,7 +42,7 @@ class BatchBufferPool
 
     private function executeCallables(): void
     {
-        
+
     }
 
 }
